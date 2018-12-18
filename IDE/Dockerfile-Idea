@@ -1,0 +1,41 @@
+#=============================================================
+# 基于x11-dev-git-mvn，增加idea开发工具                        #
+#=============================================================
+FROM xmc/x11-dev-git-mvn:0.1
+MAINTAINER xmc <xmc0824@163.com>
+
+#============================================
+#  安装idea开发工具
+#============================================
+ARG VERSION=2018.3.1
+ARG BUILD=183.4588.61
+ARG IDEACRACK=JetbrainsIdesCrack-3.4-release-enc
+ARG IDEA_DESKTOP=/usr/local/intellij-idea.desktop
+
+ENV IDEA_HOME /usr/local/idea/idea-${VERSION}
+#RUN wget --no-check-certificate --no-cookies \
+#    -P /tmp \
+#    https://download.jetbrains.com/idea/ideaIU-"${VERSION}".tar.gz
+# 测试时，本地已经下载，由本地获取
+# COPY ./ideaIU-"${VERSION}".tar.gz /tmp
+ADD ./ideaIU-"${VERSION}".tar.gz /tmp
+# RUN cd /tmp && tar -zxvf ideaIU-"${VERSION}".tar.gz \
+
+RUN mkdir -p /usr/local/idea && mv /tmp/idea-IU-"${BUILD}" "${IDEA_HOME}" \
+    && rm -rf /tmp/* \
+    && chmod 755 -R "${IDEA_HOME}"
+
+#============================================
+#　推荐购买或自行破解（省略）    
+#============================================
+
+#============================================
+#　创建快捷方式    
+#============================================
+Run echo '[Desktop Entry]' > "${IDEA_DESKTOP}" \
+    && echo "Name=IntelliJ IDEA${VERSION}" >> "${IDEA_DESKTOP}" \
+    && echo "Exec=${IDEA_HOME}/bin/idea.sh" >> "${IDEA_DESKTOP}" \
+    && echo "Icon=${IDEA_HOME}/bin/idea.png" >> "${IDEA_DESKTOP}" \
+    && echo "Encoding=UTF-8" >> "${IDEA_DESKTOP}" \
+    && echo "Terminal=false" >> "${IDEA_DESKTOP}" \
+    && echo "Type=Application" >> "${IDEA_DESKTOP}"
