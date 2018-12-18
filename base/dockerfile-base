@@ -1,0 +1,86 @@
+#=============================================================
+# 基于x11-xfce，添加必要的工具，中文字体，搜狗输入法，chrome浏览器                                    #
+#=============================================================
+FROM x11docker/xfce:latest
+MAINTAINER xmc <xmc0824@163.com>
+
+#============================================
+#　替换源
+#============================================
+RUN cp /etc/apt/sources.list /etc/apt/sources.list.backup \
+      && echo ''>/etc/apt/sources.list \
+      && echo "deb http://mirrors.aliyun.com/debian/ buster main non-free contrib">>/etc/apt/sources.list \
+      && echo "deb http://mirrors.aliyun.com/debian-security buster/updates main">>/etc/apt/sources.list \
+      && echo "deb http://mirrors.aliyun.com/debian/ buster-updates main non-free contrib">>/etc/apt/sources.list \
+      && echo "deb-src http://mirrors.aliyun.com/debian/ buster main non-free contrib">>/etc/apt/sources.list \
+      && echo "deb-src http://mirrors.aliyun.com/debian-security buster/updates main">>/etc/apt/sources.list \
+      && echo "deb-src http://mirrors.aliyun.com/debian/ buster-updates main non-free contrib">>/etc/apt/sources.list
+
+#============================================
+#  安装相关工具和字体,中文化
+#============================================
+RUN apt-get update \
+    && apt-get -y upgrade \
+    && apt-get -y install wget \
+    && apt-get -y install vim \
+    && apt-get -y install ttf-wqy-zenhei \
+    && echo "zh_CN.UTF-8 UTF-8" >> /etc/locale.gen \
+    && locale-gen zh_CN.UTF-8
+
+#============================================
+#  复制一款主题
+#============================================
+COPY ./Mcos /usr/share/themes/Mcos
+
+#============================================
+#  设置系统语言环境为中文
+#　安装fcitx输入法组件，搜狗输入法
+#  需要配置fcixt的环境变量
+#============================================
+ENV LANG 'zh_CN.UTF-8'
+ENV XMODIFIERS '@im=fcitx'
+ENV GTK_IM_MODULE fcitx
+ENV QT_IM_MODULE fcitx
+COPY ./sogoupinyin_2.2.0.0108_amd64.deb /tmp
+RUN apt-get -y install fcitx \
+    && apt-get -y install fcitx-table \
+    && apt-get -y install fcitx-table-all \
+    && apt-get -y install fcitx-frontend-gtk2 \
+    && apt-get -y install fcitx-frontend-gtk3 \
+    && apt-get -y install fcitx-frontend-qt4  \
+    && apt-get -y install fcitx-bin \
+    && apt-get -y install fcitx-libs-qt \
+    && apt-get -y install fcitx-libs \
+    && apt-get -y install libopencc2 \
+    && apt-get -y install lsb-release \
+    && apt-get -y install unzip \
+    && apt-get -y install zip \
+    && apt-get -y install libidn11 \
+    && apt-get -y install libqt4-declarative \
+    && apt-get -y install libqt4-network \
+    && apt-get -y install libqtwebkit4 \
+    && dpkg -i /tmp/sogoupinyin_2.2.0.0108_amd64.deb \
+    && rm -rf /tmp/sogoupinyin_2.2.0.0108_amd64.deb
+
+
+#============================================ 
+# Google Chrome 
+#============================================ 
+# can specify versions by CHROME_VERSION;
+# e.g. google-chrome-stable=53.0.2785.101-1
+#      google-chrome-beta=53.0.2785.92-1
+#      google-chrome-unstable=54.0.2840.14-1
+#      latest (equivalent to google-chrome-stable) 
+#      google-chrome-beta  (pull latest beta) 
+#============================================ 
+ARG CHROME_VERSION="google-chrome-stable"
+RUN apt-get -y install gnupg2 \
+    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update -qqy \
+    && apt-get -qqy install ${CHROME_VERSION:-google-chrome-stable} \
+    && rm /etc/apt/sources.list.d/google-chrome.list \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/* \
+    && sed -i '$d' /usr/bin/google-chrome-stable \
+    && echo 'exec -a "$0" "/opt/google/chrome/chrome" "$@" --user-data-dir --no-sandbox' >> /usr/bin/google-chrome-stable
+
